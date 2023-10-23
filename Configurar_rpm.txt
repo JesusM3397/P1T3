@@ -1,0 +1,512 @@
+Servidor CENTOS, ROCKY_LINUX, ALMA_LINUX, ORACLE_LINUX o REDHAT
+
+
+PARA ESTE MANUAL UTILIZARÉ ORACLE LINUX 9.2 COMO SERVIDOR
+_________________________________________________________________________________________
+
+Actualizar el sistema operativo
+
+
+# yum -y upgrade
+# yum -y update
+_________________________________________________________________________________________
+
+Configurar el Firewall
+
+# dnf install firewall-config
+
+# systemctl start firewalld
+# systemctl enable firewalld
+# systemctl stop firewalld
+# systemctl disable firewalld
+# systemctl status firewalld
+
+# firewall-cmd --list-services
+
+EJEMPLOS:
+
+# firewall-cmd --permanent --zone=work --add-port=5353/udp --add-port=3689/tcp
+# firewall-cmd --list-all --zone=work
+
+_________________________________________________________________________________________
+
+Configurar el SSH
+
+# dnf install openssh openssh-server
+# systemctl start sshd
+# systemctl enable sshd
+# systemctl stop sshd
+# systemctl status sshd
+
+Habilitamos el puerto con el firewall
+# firewall-cmd --permanent --zone=work --add-port=22/tcp
+_________________________________________________________________________________________
+
+Configurar Cockpit
+
+Verificamos que este instalado el servicio
+# dnf info cockpit
+
+En caso de no tener instalado el servicio lo instalamos 
+# dnf install cockpit
+
+# systemctl start cockpit.socket
+
+# systemctl status cockpit.socket
+
+# systemctl enable --now cockpit.socket
+
+# firewall-cmd --add-service=cockpit --permanent
+
+# firewall-cmd --reload
+
+Habilitamos el puerto con el firewall
+# firewall-cmd --permanent --zone=work --add-port=9090/tcp
+
+
+Habilitar usuario roor para cockpit
+
+# nano /etc/cockpit/disallowed-users
+
+
+Comentamos la linea donde aparece el usuario root colocando un # al inicio de la linea
+
+
+# List of users which are not allowed to login to Cockpit
+#root
+
+
+Guardamos con Ctro + O y salimos con Ctrol + x
+
+Reiniciamos el servicio cockpit
+# systemctl restart cockpit.socket
+
+Listo !!!
+
+_________________________________________________________________________________________
+
+INSTALAR APACHE
+
+# yum -y upgrade 
+
+# yum install httpd
+
+# systemctl start httpd
+
+# systemctl enable httpd
+
+# systemctl status httpd
+
+Habilitamos el puerto con el firewall
+# firewall-cmd --permanent --add-service=http --add-service=nfs
+# firewall-cmd --permanent --add-port=80/tcp
+
+# firewall-cmd --reload
+
+
+Desde nuestro sistema operativo base
+
+http://IP
+
+_________________________________________________________________________________________
+
+INSTALAR PHP8
+
+# yum install epel-release yum-utils -y
+
+# dnf module list php
+
+# dnf module enable php:8.1 -y
+
+# dnf install php php-cli -y
+
+# dnf install php-opcache php-gd php-curl php-ldap php-zip php-fileinfo -y
+
+# dnf install php-fpm php-mysqlnd php-zip php-intl php-bcmath php-json php-readline php-mbstring php-apcu php-xml php-dom -y
+
+# php -v
+
+# systemctl restart httpd
+
+# nano /var/www/html/phpinfo.php
+
+<?php
+phpinfo();
+?>
+
+_________________________________________________________________________________________
+
+INSTALAR MARIADB
+
+
+# dnf install mariadb-server
+
+# systemctl start mariadb
+
+# systemctl status mariadb
+
+# systemctl enable mariadb
+
+# mysql_secure_installation
+
+--Configurar MariaDB--
+
+Primero dar un enter
+
+Luego colocar un password para el usuario root de MariaDB
+
+PW DE ROOT EN MARIADB = PWD123Mariadb
+
+Y
+
+Y
+
+Y
+
+Y
+
+# mysqladmin -u root -p version
+
+Capturar el password
+
+$ mysql -u root -p
+
+MariaDB [(none)]> create database prueba;
+
+MariaDB [(none)]> create user 'usu_prueba'@'localhost' identified by '123456';
+
+MariaDB [(none)]> grant all on prueba.* to 'usu_prueba' identified by '123456';
+
+MariaDB [(none)]> use prueba;
+
+MariaDB [(prueba)]> create table demo(id int,nombre varchar(100));
+
+MariaDB [(prueba)]> insert into demo values(1,'Luis Estrada');
+
+Habilitamos el puerto con el firewall
+# firewall-cmd --permanent --add-port=3303/tcp
+
+# firewall-cmd --reload
+
+_________________________________________________________________________________________
+
+COMO COMPROBAR PUERTOS EN USO
+
+# netstat -plnt
+
+_________________________________________________________________________________________
+
+GESTIÓN DE USUARIOS EN LINUX
+
+VER LA LISTA DE USUARIOS
+
+# cat /etc/passwd | cut -d: -f1
+
+VER GRUPOS
+
+# cat /etc/group
+
+
+Crear usuarios en linux
+
+# adduser usu_so_demo
+
+# passwd usu_so_demo
+
+Nos conectamos con dicho usuario
+# su - usu_so_demo
+
+Nos movemos a su directorio
+$ cd /home/usu_so_demo
+
+Crear una carpeta 
+$ mkdir ejemplo_carpeta
+
+Vemos sus permisos y detalle
+$ ls -la
+-rwxr–rw-- 1 usu_so_demo usu_so_demo 0    Sep 11 19:31 miarchivo.txt
+drwxr-xr-x 2 usu_so_demo usu_so_demo 4096 Sep 11 19:36 ejemplo_carpeta
+
+Que significan todos esos datos
+
+Dividimos en partes
+
+1.- Si se inicia con una letra "d" se trata de un directorio, si inicia con un "-" se trata de un archivo
+2.- Los siguientes 3 digitos significan los permisos del propietario "r" para leer, "w" para modificar y "x" para ejecutar
+3.- Los siguientes 3 digitos significan los permisos del grupo "r" para leer, "w" para modificar y "x" para ejecutar 
+4.- Los siguientes 3 digitos significan los permisos de todos los demas usuarios "r" para leer, "w" para modificar y "x" para ejecutar
+5.- 1 o 2 o "n" significan la cantidad de enlaces fijos. Un enlace fijo es un nombre adicional para un archivo existente
+6.- usu_so_demo usu_so_demo son el nombre del propietario y el grupo de dicho archivo o carpeta
+7.- 0 o 4096 el tamaño del achivo o carpeta en bytes
+8.- Sep 11 19:31 Fecha y hora de creación del archivo o carpeta
+9.- miarchivo.txt ejemplo_carpeta Nombre del archivo o carpeta
+
+
+Cambiar de permisos a una carpeta 
+# chmod 744 -R nom_carpeta/
+# chmod 744 nom_archivo.txt
+
+Que significa cada numero:
+
+r (read) – 4
+w (write) – 2
+x (execute) – 1
+
+La suma de los 3 permisos nos da 7.
+La combinación de permisos da el numero a asignar, por ejemplo:
+Asignar permisos de lectura solo colocamos 4
+Asignar permisos de escritura y lectura colocamos 6
+
+Dejamos los siguientes permisos
+$ chmod 775 -R ejemplo_carpeta/
+
+
+Cambiar de propietario una carpeta solo se puede hacer con usuario root
+
+# chown lestrada:lestrada -R demo1/
+
+  
+_______________________________________________________________
+
+Filezilla se instala en la pc host
+
+
+En RPM
+# dnf install filezilla
+
+En Windows se descarga el .exe desde el sitio oficial
+https://filezilla-project.org/
+
+
+Configuramos el sitio con SFTP que es ssh + ftp puerto 22
+
+
+_________________________________________________________________________________________
+
+INSTALAR ORACLE 21XE
+
+# dnf install initscripts
+# dnf install ksh
+# dnf install libnsl
+# dnf install sysstat
+# dnf install xorg-x11-utils
+# dnf install xorg-x11-xauth
+# rpm -ivh compat-openssl10-1.0.2o-4.el8.x86_64.rpm
+# rpm -ivh oracle-database-preinstall-21c-1.0-1.el8.x86_64.rpm
+# rpm -ivh oracle-database-xe-21c-1.0-1.ol8.x86_64.rpm
+
+
+
+
+warning: oracle-database-xe-21c-1.0-1.ol8.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID ad986da3: NOKEY
+Verifying...                          ################################# [100%]
+Preparing...                          ################################# [100%]
+Updating / installing...
+   1:oracle-database-xe-21c-1.0-1     ################################# [100%]
+[INFO] Executing post installation scripts...
+[INFO] Oracle home installed successfully and ready to be configured.
+To configure Oracle Database XE, optionally modify the parameters in '/etc/sysconfig/oracle-xe-21c.conf' and then execute '/etc/init.d/oracle-xe-21c configure' as root.
+
+
+
+
+
+
+# export CV_ASSUME_DISTID=OEL8.4
+# /etc/init.d/oracle-xe-21c configure
+
+
+
+
+Specify a password to be used for database accounts. Oracle recommends that the password entered should be at least 8 characters in length, contain at least 1 uppercase character, 1 lower case character and 1 digit [0-9]. Note that the same password will be used for SYS, SYSTEM and PDBADMIN accounts:
+Confirm the password:
+
+Configuring Oracle Listener.
+Listener configuration succeeded.
+Configuring Oracle Database XE.
+Enter SYS user password: 
+**********
+Enter SYSTEM user password: 
+***********
+Enter PDBADMIN User Password: 
+********* 
+Prepare for db operation
+7% complete
+Copying database files
+29% complete
+Creating and starting Oracle instance
+30% complete
+33% complete
+37% complete
+40% complete
+43% complete
+Completing Database Creation
+47% complete
+50% complete
+Creating Pluggable Databases
+54% complete
+71% complete
+Executing Post Configuration Actions
+93% complete
+Running Custom Scripts
+100% complete
+Database creation complete. For details check the logfiles at:
+ /opt/oracle/cfgtoollogs/dbca/XE.
+Database Information:
+Global Database Name:XE
+System Identifier(SID):XE
+Look at the log file "/opt/oracle/cfgtoollogs/dbca/XE/XE.log" for further details.
+
+Connect to Oracle Database using one of the connect strings:
+     Pluggable database: oracleserver/XEPDB1
+     Multitenant container database: oracleserver
+Use https://localhost:5500/em to access Oracle Enterprise Manager for Oracle Database XE
+
+
+
+
+Habilitamos el puerto con el firewall
+# firewall-cmd --permanent --add-port=5500/tcp
+
+# firewall-cmd --reload
+
+https://IP:5500/em
+
+
+
+Gestionar instancia XE de forma manual
+
+# /etc/init.d/oracle-xe-21c start
+# /etc/init.d/oracle-xe-21c stop
+# /etc/init.d/oracle-xe-21c restart
+# /etc/init.d/oracle-xe-21c status
+
+CREATE USER C##ESCUELA IDENTIFIED BY PWD123;
+   
+GRANT ALL PRIVILEGES TO C##ESCUELA;
+
+CREATE TABLE CARRERAS(
+    id NUMBER,
+    clave VARCHAR2(50) NOT NULL,
+    nombre VARCHAR2(100) NOT NULL,
+    status NUMBER,
+    PRIMARY KEY(id)
+);
+
+CREATE TABLE ALUMNOS(
+    id NUMBER,
+    no_ctrol VARCHAR2(50) NOT NULL,
+    nombre VARCHAR2(100) NOT NULL,
+    ap_pat VARCHAR2(100) NOT NULL,
+    ap_mat VARCHAR2(100) NOT NULL,
+    id_carrera NUMBER,
+    status NUMBER,
+    PRIMARY KEY(id),
+    FOREIGN KEY(id_carrera) REFERENCES CARRERAS(id)
+);
+
+CREATE TABLE FOTOS(
+    id NUMBER,
+    descripcion VARCHAR2(50) NOT NULL,
+    foto BLOB NULL,
+    id_alumno NUMBER,
+    status NUMBER,
+    PRIMARY KEY(id),
+    FOREIGN KEY(id_alumno) REFERENCES ALUMNOS(id)
+);
+
+
+CREATE SEQUENCE carreras_seq START WITH 1;
+CREATE SEQUENCE alumnos_seq START WITH 1;
+CREATE SEQUENCE fotos_seq START WITH 1;
+
+
+CREATE OR REPLACE TRIGGER CARRERAS_ID_TGR 
+BEFORE INSERT ON CARRERAS 
+FOR EACH ROW
+BEGIN
+  SELECT carreras_seq.NEXTVAL
+  INTO   :new.id
+  FROM   dual;
+END;
+/
+
+
+CREATE OR REPLACE TRIGGER ALUMNOS_ID_TGR 
+BEFORE INSERT ON ALUMNOS
+FOR EACH ROW
+BEGIN
+  SELECT alumnos_seq.NEXTVAL
+  INTO   :new.id
+  FROM   dual;
+END;
+/
+
+
+CREATE OR REPLACE TRIGGER FOTOS_ID_TGR 
+BEFORE INSERT ON FOTOS 
+FOR EACH ROW
+BEGIN
+  SELECT fotos_seq.NEXTVAL
+  INTO   :new.id
+  FROM   dual;
+END;
+/
+
+
+
+
+CREATE TABLE RESULTADOS(
+    id NUMBER,
+    fecha_hora VARCHAR2(100) NOT NULL,
+    resultado VARCHAR2(100) NOT NULL,
+    gana NUMBER,
+    status NUMBER,
+    PRIMARY KEY(id)
+);
+
+CREATE SEQUENCE resultados_seq START WITH 1;
+
+CREATE OR REPLACE TRIGGER RESUL_ID_TGR 
+BEFORE INSERT ON RESULTADOS 
+FOR EACH ROW
+BEGIN
+  SELECT resultados_seq.NEXTVAL
+  INTO   :new.id
+  FROM   dual;
+END;
+/
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+
+
+_________________________________________________________________________________________
+

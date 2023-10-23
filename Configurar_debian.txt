@@ -1,0 +1,465 @@
+Servidor DEBIAN
+
+# apt-get update
+# apt-get upgrade
+# apt-get install net-tools
+# apt install apache2
+# systemctl status apache2
+# systemctl enable apache2
+# systemctl start apache2
+# systemctl stop apache2
+# systemctl restart apache2
+
+_______________________________________________________________
+
+Configurar el firewall
+
+# apt install ufw
+# ufw allow ssh
+# ufw allow http
+# ufw allow https
+
+
+--- ufw allow puerto  22->ssh  80->http   443->https
+
+Especificar puertos y rangos
+# ufw allow 6000:6007/tcp
+# ufw allow 6000:6007/udp
+
+Especificar ip
+# ufw allow from 203.0.113.4
+   
+Denegar acceso
+# ufw deny http
+_______________________________________________________________
+
+Conexión a un servidor con SSH
+
+Primero tener abierto el puerto 22 (# ufw allow ssh)
+
+En la terminar del SO Cliente colocar el comando siguiente:
+
+$ ssh usuario@ip -p puerto
+Damos enter y nos pedira la contraseña, en caso de ser la primera vez que se conecta, pedira unos permisos, para los cuales respondemos con: yes
+
+Ejemplo:
+
+$ ssh lestrada@192.168.122.13 -p 22
+
+Podemos omitir el parametro del puerto siempre y cuando SSH este configurado con el puerto 22
+  
+$ ssh lestrada@192.168.122.13
+
+_______________________________________________________________
+
+INSTALAR PHP 8.2
+
+
+# apt install lsb-release apt-transport-https ca-certificates software-properties-common -y
+
+# wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+
+# sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+
+# apt update
+
+# apt install php8.2
+
+# apt install php8.2-{cli,zip,mysql,bz2,curl,mbstring,intl,common}
+
+# apt install libapache2-mod-php8.2 
+
+# apt install php8.2-opcache php8.2-mcrypt php8.2-gd php8.2-ldap php8.2-fileinfo
+
+# apt install php8.2-fpm php8.2-mysqlnd php8.2-intl php8.2-bcmath php8.2-imagick php8.2-xmlrpc php8.2-phpdbg php8.2-readline php8.2-memcached php8.2-redis php8.2-apcu php8.2-xml php8.2-dom php8.2-redis php8.2-memcached php8.2-memcache
+
+# php -v
+
+# systemctl restart apache2
+
+Para verificar la instalación de php 8.2
+vamos a la carpeta /var/www/html y creamos el archivo phpinfo.php
+
+# nano /var/www/html/infophp.php
+
+--captura el siguiente contenido:
+
+<?php
+phpinfo();
+?>
+
+Ctl+O para guardar (es la letra o NO el número cero) 
+Ctr+x para salir
+
+http://IP/phpinfo.php
+
+_______________________________________________________________
+
+Instalar MariaDB
+
+# apt-get update && apt-get upgrade -y
+
+# apt-get install software-properties-common dirmngr gnupg2 -y
+
+# apt-get install apt-transport-https wget curl -y
+
+# apt search mariadb
+
+# apt-get install mariadb-server -y
+
+# systemctl start mariadb
+
+--Podemos usar systemctl stop mariadb   systemctl restart mariadb
+
+# systemctl enable mariadb
+
+# systemctl status mariadb
+Para salir Ctr+C
+
+# mysqladmin version
+
+--Configuramos el servidor MariaDB
+--Solo se hace una vez
+
+# /usr/bin/mysql_secure_installation
+
+Nos pide contraseña de root solo damos enter
+
+Switch to unix_socket authentication [Y/n] Y
+
+Change the root password? [Y/n] Y
+
+--Colocamos una contraseña para el usuario root de la base de datos
+
+PWDMariaDB
+
+Remove anonymous users? [Y/n] Y
+
+Disallow root login remotely? [Y/n] n
+
+Remove test database and access to it? [Y/n] Y
+
+Reload privilege tables now? [Y/n] Y
+
+Salimos del usuario root con 
+# exit
+
+
+Entramos al servidor MariaDB
+
+$ mysql -u root -p
+
+MariaDB [(none)]> create database prueba;
+
+MariaDB [(none)]> create user 'usu_prueba'@'localhost' identified by '123456';
+
+MariaDB [(none)]> grant all on prueba.* to 'usu_prueba' identified by '123456';
+
+MariaDB [(none)]> use prueba;
+
+MariaDB [(prueba)]> create table demo(id int,nombre varchar(100));
+
+MariaDB [(prueba)]> insert into demo values(1,'Luis Estrada');
+
+MariaDB [(prueba)]> select * from demo;
+
+MariaDB [(prueba)]> quit
+
+
+
+
+Habilitamos la conexión remota
+
+# ufw allow 3306/tcp
+
+# ufw allow from 192.168.100.51 to any port 3306
+
+_______________________________________________________________
+
+COMO COMPROBAR PUERTOS EN USO
+
+# netstat -plnt
+
+
+_______________________________________________________________
+
+GESTIÓN DE USUARIOS EN LINUX
+
+VER LA LISTA DE USUARIOS
+
+# cat /etc/passwd | cut -d: -f1
+
+VER GRUPOS
+
+# cat /etc/group
+
+
+Crear usuarios en linux
+
+# adduser usu_so_demo
+Nos pide crear una contraseña, y datos adicionales
+tambien nos crea un grupo y el directorio del usuario en /home
+
+Nos conectamos con dicho usuario
+# su - usu_so_demo
+
+Nos movemos a su directorio
+$ cd /home/usu_so_demo
+
+Crear una carpeta 
+$ mkdir ejemplo_carpeta
+
+Vemos sus permisos y detalle
+$ ls -la
+-rwxr–rw-- 1 usu_so_demo usu_so_demo 0    Sep 11 19:31 miarchivo.txt
+drwxr-xr-x 2 usu_so_demo usu_so_demo 4096 Sep 11 19:36 ejemplo_carpeta
+
+Que significan todos esos datos
+
+Dividimos en partes
+
+1.- Si se inicia con una letra "d" se trata de un directorio, si inicia con un "-" se trata de un archivo
+2.- Los siguientes 3 digitos significan los permisos del propietario "r" para leer, "w" para modificar y "x" para ejecutar
+3.- Los siguientes 3 digitos significan los permisos del grupo "r" para leer, "w" para modificar y "x" para ejecutar 
+4.- Los siguientes 3 digitos significan los permisos de todos los demas usuarios "r" para leer, "w" para modificar y "x" para ejecutar
+5.- 1 o 2 o "n" significan la cantidad de enlaces fijos. Un enlace fijo es un nombre adicional para un archivo existente
+6.- usu_so_demo usu_so_demo son el nombre del propietario y el grupo de dicho archivo o carpeta
+7.- 0 o 4096 el tamaño del achivo o carpeta en bytes
+8.- Sep 11 19:31 Fecha y hora de creación del archivo o carpeta
+9.- miarchivo.txt ejemplo_carpeta Nombre del archivo o carpeta
+
+
+Cambiar de permisos a una carpeta 
+# chmod 744 -R nom_carpeta/
+# chmod 744 nom_archivo.txt
+
+Que significa cada numero:
+
+r (read) – 4
+w (write) – 2
+x (execute) – 1
+
+La suma de los 3 permisos nos da 7.
+La combinación de permisos da el numero a asignar, por ejemplo:
+Asignar permisos de lectura solo colocamos 4
+Asignar permisos de escritura y lectura colocamos 6
+
+Dejamos los siguientes permisos
+$ chmod 775 -R ejemplo_carpeta/
+
+
+Cambiar de propietario una carpeta solo se puede hacer con usuario root
+
+# chown lestrada:lestrada -R demo1/
+
+  
+_______________________________________________________________
+
+Filezilla se instala en la 
+
+
+
+En DEB
+# apt install filezilla
+
+En RPM
+# dnf install filezilla
+
+En Windows se descarga el .exe desde el sitio oficial
+https://filezilla-project.org/
+
+
+Configuramos el sitio con SFTP que es ssh + ftp puerto 22
+
+_______________________________________________________________
+
+Cockpit
+
+# apt update
+
+# apt install -y cockpit
+
+# systemctl status cockpit.socket
+ 
+# ufw allow 9090/tcp
+
+
+Desde un cliente abrir navegador web
+
+https://IP:9090
+
+_______________________________________________________________
+
+Tomcat 9 
+
+# apt update
+
+# apt install -y tomcat9 tomcat9-admin
+
+# ufw allow 8080/tcp
+
+# ufw allow 8443/tcp
+
+Creamos un certificaco autofirmado y creado por nosotros
+# mkdir /etc/keys
+
+# keytool -genkey -alias tomcat9 -keyalg RSA -storetype PKCS12 -keystore /etc/keys/tomcat9.jks
+Tomcat
+Y nos pide muchos datos, confirmamos con yes
+
+Editamos la llave
+# nano /etc/tomcat9/server.xml
+
+
+Dentro del bloque Service llamado «Catalina» añadiremos una directiva Connector para las conexiones seguras:
+
+
+<Connector port="8443" maxThreads="150" scheme="https" secure="true"
+                SSLEnabled="true" keystoreFile="/etc/keys/tomcat9.jks"
+                keystorePass="XXXXXXXX" clientAuth="false" keyAlias="tomcat9"
+                sslProtocol="TLS" />
+
+
+Guardamos y salimos
+
+
+# systemctl restart tomcat9
+
+
+https://192.168.122.13:8443/
+
+
+
+Configuramos usuarios para tomcat
+
+# nano /etc/tomcat9/tomcat-users.xml
+
+
+Dentro del bloque tomcat-users añadiremos una directiva user:
+
+
+
+<user username="usu" password="PWD" roles="manager-gui,admin-gui"/>
+
+
+Guardamos y salimos
+
+
+https://192.168.122.13:8443/manager
+Nos pide el usuario y contraseña
+
+Ejemplo
+
+
+    pepe/pepe123
+    juan/juan123
+    roberto/roberto123
+    chonto/chonto123
+
+
+_______________________________________________________________
+
+GlassFish en Debian 11
+
+# apt install -y unzip wget
+
+Necesitamos Java antes de glassfish
+
+# java -version
+//probablemente nos de un error de que no conoce el comando java, significa que no tenemos instalado java
+
+Para instalar jdk 17         NO LO RECOMIENDO
+# apt install openjdk-17-jdk
+
+Para instalar jdk 11
+# apt install default-jre default-jdk
+
+# java -version
+openjdk version "11...."
+openjdk version "17...."
+
+Para cambiar de java version 
+# update-alternatives --config java
+
+
+Agregamos la variable de ambiente JAVA_HOME
+# nano /etc/environment
+
+//agregamos al final del archivo
+JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64/"
+//guardamos y salimos
+
+Se recarga el archivo
+# source /etc/environment
+
+# echo $JAVA_HOME
+/usr/lib/jvm/java-11-openjdk-amd64/
+
+# wget https://download.eclipse.org/ee4j/glassfish/glassfish-6.2.5.zip
+
+# mv glassfish-6.2.5.zip /opt/
+
+# cd /opt
+
+# unzip glassfish-6.2.5.zip
+
+
+Creamos un usuario para glassfish
+# useradd -s /sbin/nologin glassfish
+
+Cambiamos propietario
+# chown -R glassfish:glassfish /opt/glassfish6/
+
+# nano /usr/lib/systemd/system/glassfish.service
+
+[Unit]
+Description = GlassFish Server
+After = syslog.target network.target
+
+[Service]
+User = glassfish
+ExecStart = /usr/bin/java -jar /opt/glassfish6/glassfish/lib/client/appserver-cli.jar start-domain
+ExecStop = /usr/bin/java -jar /opt/glassfish6/glassfish/lib/client/appserver-cli.jar stop-domain
+ExecReload = /usr/bin/java -jar /opt/glassfish6/glassfish/lib/client/appserver-cli.jar restart-domain
+Type = forking
+
+[Install]
+WantedBy = multi-user.target
+
+
+# systemctl daemon-reload
+
+# systemctl start glassfish.service
+
+# ufw allow 8080/tcp
+
+# ufw allow 8181/tcp
+
+# ufw allow 4848/tcp
+
+# systemctl enable glassfish.service
+
+# /opt/glassfish6/bin/asadmin --port 4848 change-admin-password
+
+admin
+PWD
+PWD
+
+
+# /opt/glassfish6/bin/asadmin enable-secure-admin
+
+# /opt/glassfish6/bin/asadmin --port 4848 enable-secure-admin
+
+# systemctl restart glassfish.service
+
+
+
+_______________________________________________________________
+
+
+
+_______________________________________________________________
+
+
+
+
